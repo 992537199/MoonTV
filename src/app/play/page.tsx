@@ -41,7 +41,10 @@ import {
   savePlayRecord,
   toggleFavorite,
 } from '@/lib/db.client';
-import { type VideoDetail, fetchVideoDetail } from '@/lib/fetchVideoDetail';
+import {
+  type VideoDetail,
+  fetchVideoDetail,
+} from '@/lib/fetchVideoDetail.client';
 import { SearchResult } from '@/lib/types';
 
 // 扩展 HTMLVideoElement 类型以支持 hls 属性
@@ -193,6 +196,8 @@ function PlayPageClient() {
   // 长按三倍速相关
   const longPressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const normalPlaybackRateRef = useRef<number>(1);
+  // 标记长按是否已生效
+  const longPressActiveRef = useRef<boolean>(false);
 
   // 同步最新值到 refs
   useEffect(() => {
@@ -1062,6 +1067,7 @@ function PlayPageClient() {
       if (playerRef.current) {
         normalPlaybackRateRef.current = playerRef.current.playbackRate || 1;
         playerRef.current.playbackRate = 3.0;
+        longPressActiveRef.current = true; // 记录长按已激活
         displayShortcutHint('3倍速', 'play');
       }
     }, 300); // 按压 300ms 触发
@@ -1072,8 +1078,10 @@ function PlayPageClient() {
       clearTimeout(longPressTimeoutRef.current);
       longPressTimeoutRef.current = null;
     }
-    if (playerRef.current) {
+    // 只有在长按激活过且当前倍速为 3.0 时才恢复，防止误触
+    if (playerRef.current && longPressActiveRef.current) {
       playerRef.current.playbackRate = normalPlaybackRateRef.current || 1;
+      longPressActiveRef.current = false;
     }
   };
 
@@ -1436,7 +1444,6 @@ function PlayPageClient() {
           noGestures={true}
           slots={{
             googleCastButton: null,
-            pipButton: null,
             settingsMenu: null,
             captionButton: null,
             muteButton: null, // 隐藏静音按钮
@@ -1497,7 +1504,7 @@ function PlayPageClient() {
             beforePlayButton: (
               <>
                 {showSkipButtons && (
-                  <SeekButton className='vds-button' seconds={10}>
+                  <SeekButton className='vds-button' seconds={-10}>
                     <SeekBackward10Icon className='vds-icon' />
                   </SeekButton>
                 )}
@@ -1868,7 +1875,7 @@ const PlaybackRateButton = ({
           className='vds-radio-group'
           aria-label='Custom Options'
           value={rate.toString()}
-          onChange={(value) => {
+          onChange={(value: string) => {
             const player = playerRef.current;
             if (!player) {
               return;
@@ -1877,7 +1884,7 @@ const PlaybackRateButton = ({
             playerContainerRef.current?.focus();
           }}
         >
-          {rates.reverse().map((rate) => (
+          {[...rates].reverse().map((rate) => (
             <RadioGroup.Item
               className='vds-radio'
               value={rate.toString()}
@@ -1902,7 +1909,7 @@ const FavoriteIcon = ({ filled }: { filled: boolean }) => {
         xmlns='http://www.w3.org/2000/svg'
       >
         <path
-          d='M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z'
+          d='M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.41-1.41L7.83 13H20v-2z'
           fill='#ef4444' /* Tailwind red-500 */
           stroke='#ef4444'
           strokeWidth='2'
@@ -1917,7 +1924,6 @@ const FavoriteIcon = ({ filled }: { filled: boolean }) => {
 
 // 新增：去广告图标组件
 const AdBlockIcon = ({ enabled }: { enabled: boolean }) => {
-  const color = enabled ? '#22c55e' : '#ffffff'; // Tailwind green-500 or white
   return (
     <svg
       className='h-6 w-6 vds-icon' // 略微放大尺寸
@@ -1932,20 +1938,21 @@ const AdBlockIcon = ({ enabled }: { enabled: boolean }) => {
         fontWeight='bold'
         textAnchor='middle'
         dominantBaseline='middle'
-        fill={color}
+        fill='#ffffff'
       >
         AD
       </text>
-      {/* 斜线 */}
-      <line
-        x1='4'
-        y1='4'
-        x2='28'
-        y2='28'
-        stroke={color}
-        strokeWidth='4'
-        strokeLinecap='round'
-      />
+      {enabled && (
+        <line
+          x1='4'
+          y1='4'
+          x2='28'
+          y2='28'
+          stroke='#ffffff'
+          strokeWidth='4'
+          strokeLinecap='round'
+        />
+      )}
     </svg>
   );
 };
