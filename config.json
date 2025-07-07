@@ -120,6 +120,22 @@
     "yutu": {
       "api": "https://apiyutu.com/api.php/provide/vod",
       "name": "🔞玉兔资源"
+    },
+    "91madou": {
+      "api": "https://91md.me/api.php/provide/vod",
+      "name": "🔞91麻豆"
+    },
+    "semao": {
+      "api": "https://api.maozyapi.com/inc/apijson_vod.php",
+      "name": "🔞色猫资源"
+    },
+    "senanguo": {
+      "api": "https://api.sexnguon.com/api.php/provide/vod/",
+      "name": "🔞色南国资源"
+    },
+    "aivin": {
+      "api": "http://lbapiby.com/api.php/provide/vod",
+      "name": "🔞AIvin"
     }
   }
 }
